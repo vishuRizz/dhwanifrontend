@@ -3,6 +3,7 @@ const getBaseUrl = () =>
 
 export interface SynthesizeTtsResult {
   audioUrl: string;
+  path: string;
 }
 
 export async function synthesizeTts(params: {

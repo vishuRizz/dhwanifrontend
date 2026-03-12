@@ -41,8 +41,8 @@ export default function HomeScreen() {
         <View style={styles.logoWrap}>
           <Text style={styles.logoIcon}>🎧</Text>
         </View>
-        <Text style={styles.appName}>Dhwani</Text>
-        <Text style={styles.tagline}>Listen. Read. Access.</Text>
+        <Text style={styles.appName}>Sunai</Text>
+        <Text style={styles.tagline}>Sun.ai · Listen. Read. Access.</Text>
         <Text style={styles.heroDesc}>
           An accessibility app that turns written content into clear, natural
           speech — designed for the blind and low-vision community.

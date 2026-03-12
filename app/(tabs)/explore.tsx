@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,9 +9,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { theme } from "@/constants/theme";
+import {
+  fetchAudioHistory,
+  AudioHistoryItem,
+} from "@/services/api/audioHistory";
 
 const INFO_ROWS = [
-  { label: "App name", value: "Dhwani" },
+  { label: "App name", value: "Sunai" },
   { label: "Version", value: "1.0.0" },
   { label: "Backend", value: "Next.js + Google TTS" },
   { label: "Storage", value: "Supabase" },
@@ -38,8 +43,28 @@ const ACCESSIBILITY_TIPS = [
   "Use headphones for the best audio experience.",
 ];
 
-export default function AboutScreen() {
+export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const [history, setHistory] = useState<AudioHistoryItem[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setError(null);
+        const items = await fetchAudioHistory();
+        setHistory(items);
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : "Could not load saved audios"
+        );
+      } finally {
+        setLoadingHistory(false);
+      }
+    })();
+  }, []);
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -49,7 +74,7 @@ export default function AboutScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.appIcon}>🎧</Text>
-        <Text style={styles.title}>About Dhwani</Text>
+        <Text style={styles.title}>Your profile</Text>
         <Text style={styles.subtitle}>
           An accessibility-first app that converts written PDFs into natural
           audio, helping the blind and low-vision community access information
@@ -57,9 +82,49 @@ export default function AboutScreen() {
         </Text>
       </View>
 
+      {/* Saved audio history */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Saved audios</Text>
+        {loadingHistory ? (
+          <Text style={styles.mutedText}>Loading…</Text>
+        ) : error ? (
+          <Text style={styles.mutedText}>{error}</Text>
+        ) : history.length === 0 ? (
+          <Text style={styles.mutedText}>
+            When you convert a PDF to speech, it will appear here.
+          </Text>
+        ) : (
+          <View style={styles.historyCard}>
+            {history.map((item, index) => (
+              <TouchableOpacity
+                key={item.path}
+                style={[styles.historyRow, index > 0 && styles.historyRowBorder]}
+                onPress={() => Linking.openURL(item.url)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.historyAvatar}>
+                  <Text style={styles.historyAvatarText}>▶</Text>
+                </View>
+                <View style={styles.historyBody}>
+                  <Text style={styles.historyTitle} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.historyMeta}>
+                    {item.createdAt
+                      ? new Date(item.createdAt).toLocaleString()
+                      : "Time unknown"}
+                  </Text>
+                </View>
+                <Text style={styles.historyArrow}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
       {/* App info */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>App info</Text>
+        <Text style={styles.sectionLabel}>About app</Text>
         <View style={styles.infoCard}>
           {INFO_ROWS.map((row, i) => (
             <View
@@ -171,6 +236,63 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  historyCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  historyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  historyRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  historyAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: `${theme.colors.primary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  historyAvatarText: {
+    fontSize: 16,
+    color: theme.colors.primary,
+  },
+  historyBody: {
+    flex: 1,
+  },
+  historyTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  historyPreview: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  historyMeta: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+  },
+  historyArrow: {
+    fontSize: 18,
+    color: theme.colors.textSecondary,
+  },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -274,5 +396,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.textSecondary,
     marginTop: theme.spacing.sm,
+  },
+  mutedText: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  clearButton: {
+    marginTop: theme.spacing.sm,
+    alignSelf: "flex-end",
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 6,
+  },
+  clearButtonText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    textDecorationLine: "underline",
   },
 });

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "dhwani-new",
-    "slug": "dhwani-new",
+    "name": "Sunai",
+    "slug": "sunai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "dhwaninew",
+    "scheme": "sunai",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
