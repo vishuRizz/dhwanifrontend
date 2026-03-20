@@ -9,9 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sunai.app"
     },
     "android": {
+      "package": "com.sunai.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +45,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "apiUrl": "https://dhwani-backend.vercel.app",
+      "router": {},
+      "eas": {
+        "projectId": "24bc1e0c-3990-44be-bbf4-1d4c71d7b986"
+      }
     }
   }
 }
