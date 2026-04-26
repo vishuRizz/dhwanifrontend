@@ -5,6 +5,8 @@ export interface UploadPdfResult {
   text: string;
   chunks: string[];
   chunkSize: number;
+  /** True when text came from Google Vision OCR (scanned PDF). */
+  usedOcr?: boolean;
 }
 
 export async function uploadPdf(file: {
