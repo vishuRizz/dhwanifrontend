@@ -1,3 +1,5 @@
+import { logApiRequest, logApiResponse } from "@/services/api/requestLogger";
+
 const getBaseUrl = () =>
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -10,12 +12,15 @@ export interface AudioHistoryItem {
 
 export async function fetchAudioHistory(): Promise<AudioHistoryItem[]> {
   const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/tts/history`, {
+  const url = `${baseUrl}/api/tts/history`;
+  logApiRequest("GET", url);
+  const response = await fetch(url, {
     method: "GET",
     headers: {
       Accept: "application/json",
     },
   });
+  logApiResponse("GET", url, response.status, response.ok);
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));

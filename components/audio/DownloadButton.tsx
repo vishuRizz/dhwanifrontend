@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { theme } from "@/constants/theme";
 
@@ -23,9 +23,10 @@ export function DownloadButton({
     setSaving(true);
     setSaved(false);
     try {
-      const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      const dir = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
       if (!dir) throw new Error("No storage directory");
-      const path = `${dir}${filename}`;
+      const safeName = filename.replace(/[^\w.-]/g, "_");
+      const path = `${dir}${Date.now()}-${safeName}`;
       await FileSystem.downloadAsync(audioUrl, path);
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -36,7 +37,7 @@ export function DownloadButton({
       }
       setSaved(true);
     } catch (e) {
-      console.error(e);
+      console.error("Save audio failed:", e);
     } finally {
       setSaving(false);
     }
