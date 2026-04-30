@@ -1,3 +1,5 @@
+import { logApiRequest, logApiResponse } from "@/services/api/requestLogger";
+
 const getBaseUrl = () =>
   process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
@@ -22,13 +24,16 @@ export async function uploadPdf(file: {
     type: file.type ?? "application/pdf",
   } as unknown as Blob);
 
-  const response = await fetch(`${baseUrl}/api/pdf/upload`, {
+  const url = `${baseUrl}/api/pdf/upload`;
+  logApiRequest("POST", url, { fileName: file.name, fileType: file.type });
+  const response = await fetch(url, {
     method: "POST",
     body: formData,
     headers: {
       Accept: "application/json",
     },
   });
+  logApiResponse("POST", url, response.status, response.ok);
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
