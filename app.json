@@ -10,10 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sunai.app"
+      "bundleIdentifier": "com.sunai-1.app"
     },
     "android": {
-      "package": "com.sunai.app",
+      "package": "com.sunai-1.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
