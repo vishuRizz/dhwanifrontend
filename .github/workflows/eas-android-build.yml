@@ -1,0 +1,45 @@
+name: EAS Android Build
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: eas-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: preview
+            artifact: APK
+          - profile: production
+            artifact: AAB
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android ${{ matrix.artifact }}
+        run: eas build --platform android --profile ${{ matrix.profile }} --non-interactive

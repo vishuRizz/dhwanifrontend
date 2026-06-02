@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.sunai-1.app"
     },
     "android": {
-      "package": "com.sunai-1.app",
+      "package": "com.avi.sunai",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -50,8 +50,9 @@
       "apiUrl": "https://dhwani-backend.vercel.app",
       "router": {},
       "eas": {
-        "projectId": "24bc1e0c-3990-44be-bbf4-1d4c71d7b986"
+        "projectId": "6b036ab0-0042-49a9-bb46-72b52fb734fe"
       }
-    }
+    },
+    "owner": "avi_srivastava"
   }
 }
