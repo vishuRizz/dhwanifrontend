@@ -11,6 +11,8 @@ import Slider from "@react-native-community/slider";
 import { theme } from "@/constants/theme";
 
 const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+/** expo-av max; keep playback at full device volume. */
+const PLAYBACK_VOLUME = 1.0;
 
 interface AudioPlayerProps {
   audioUrl: string | null;
@@ -36,7 +38,7 @@ export function AudioPlayer({ audioUrl, onProgress }: AudioPlayerProps) {
           allowsRecordingIOS: false,
           playsInSilentModeIOS: true,
           staysActiveInBackground: true,
-          shouldDuckAndroid: true,
+          shouldDuckAndroid: false,
           playThroughEarpieceAndroid: false,
         });
       } catch (e) {
@@ -60,7 +62,11 @@ export function AudioPlayer({ audioUrl, onProgress }: AudioPlayerProps) {
     try {
       const { sound } = await Audio.Sound.createAsync(
         { uri: url },
-        { shouldPlay: false, progressUpdateIntervalMillis: 250 },
+        {
+          shouldPlay: false,
+          volume: PLAYBACK_VOLUME,
+          progressUpdateIntervalMillis: 250,
+        },
         (status) => {
           if (!status.isLoaded) return;
           const pos = status.positionMillis ?? 0;
@@ -71,6 +77,7 @@ export function AudioPlayer({ audioUrl, onProgress }: AudioPlayerProps) {
         }
       );
       soundRef.current = sound;
+      await sound.setVolumeAsync(PLAYBACK_VOLUME);
       const st = await sound.getStatusAsync();
       if (st.isLoaded && st.durationMillis != null) setDurationMs(st.durationMillis);
     } catch (e) {
@@ -105,6 +112,7 @@ export function AudioPlayer({ audioUrl, onProgress }: AudioPlayerProps) {
       if (st.isPlaying) {
         await s.pauseAsync();
       } else {
+        await s.setVolumeAsync(PLAYBACK_VOLUME);
         await s.playAsync();
       }
     } catch (e) {

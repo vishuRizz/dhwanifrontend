@@ -5,7 +5,7 @@
   "build": {
     "preview": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dhwani-backend.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://dhwani-backend-u3wa.vercel.app"
       },
       "android": {
         "buildType": "apk"
@@ -13,7 +13,7 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dhwani-backend.vercel.app"
+        "EXPO_PUBLIC_API_URL": "https://dhwani-backend-u3wa.vercel.app"
       },
       "android": {
         "buildType": "app-bundle"

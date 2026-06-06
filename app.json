@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sunai",
     "slug": "sunai",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sunai",
@@ -14,6 +14,7 @@
     },
     "android": {
       "package": "com.avi.sunaiapp",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -47,7 +48,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "https://dhwani-backend.vercel.app",
+      "apiUrl": "https://dhwani-backend-u3wa.vercel.app",
       "router": {},
       "eas": {
         "projectId": "6b036ab0-0042-49a9-bb46-72b52fb734fe"
