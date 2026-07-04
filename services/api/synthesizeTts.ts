@@ -45,18 +45,29 @@ export interface SynthesizeTtsResult {
 export async function synthesizeTts(params: {
   text?: string;
   chunks?: string[];
+  /** Full document text — used for language detection on per-chunk synthesis. */
+  detectFromText?: string;
+  languageCode?: string;
+  voice?: string;
 }): Promise<SynthesizeTtsResult> {
   const baseUrl = getBaseUrl();
-  const body =
+  const core =
     params.chunks?.length && params.chunks.length > 0
       ? { chunks: params.chunks }
       : params.text
       ? { text: params.text }
       : null;
 
-  if (!body) {
+  if (!core) {
     throw new Error("Provide text or chunks");
   }
+
+  const body = {
+    ...core,
+    ...(params.detectFromText ? { detectFromText: params.detectFromText } : {}),
+    ...(params.languageCode ? { languageCode: params.languageCode } : {}),
+    ...(params.voice ? { voice: params.voice } : {}),
+  };
 
   const url = `${baseUrl}/api/tts/synthesize`;
   logApiRequest("POST", url, body);

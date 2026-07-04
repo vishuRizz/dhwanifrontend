@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { uploadPdf } from "@/services/api/uploadPdf";
 import { synthesizeTts } from "@/services/api/synthesizeTts";
 
@@ -9,11 +9,21 @@ export type PdfToSpeechStatus =
   | "ready"
   | "error";
 
+export interface SynthesisProgress {
+  ready: number;
+  total: number;
+}
+
 export interface UsePdfToSpeechResult {
   status: PdfToSpeechStatus;
   error: string | null;
+  /** Grows as each audio chunk is synthesized (chunk 1 first). */
+  audioUrls: string[];
+  /** @deprecated Use audioUrls[0] */
   audioUrl: string | null;
   transcriptText: string | null;
+  synthesisProgress: SynthesisProgress | null;
+  isBackgroundSynthesizing: boolean;
   selectedFile: { name: string; uri: string } | null;
   selectFile: (file: { uri: string; name: string; type?: string } | null) => void;
   run: () => Promise<void>;
@@ -23,9 +33,11 @@ export interface UsePdfToSpeechResult {
 export function usePdfToSpeech(): UsePdfToSpeechResult {
   const [status, setStatus] = useState<PdfToSpeechStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioUrls, setAudioUrls] = useState<string[]>([]);
   const [transcriptText, setTranscriptText] = useState<string | null>(null);
+  const [synthesisProgress, setSynthesisProgress] = useState<SynthesisProgress | null>(null);
   const [selectedFile, setSelectedFile] = useState<{ name: string; uri: string } | null>(null);
+  const cancelledRef = useRef(false);
 
   const selectFile = useCallback((file: { uri: string; name: string; type?: string } | null) => {
     setSelectedFile(file ? { name: file.name, uri: file.uri } : null);
@@ -34,8 +46,10 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
 
   const run = useCallback(async () => {
     if (!selectedFile) return;
+    cancelledRef.current = false;
     setError(null);
-    setAudioUrl(null);
+    setAudioUrls([]);
+    setSynthesisProgress(null);
     setStatus("extracting");
 
     try {
@@ -44,25 +58,85 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
         name: selectedFile.name,
         type: "application/pdf",
       });
+      if (cancelledRef.current) return;
+
       setTranscriptText(text ?? null);
+
+      if (!chunks?.length) {
+        throw new Error("No text could be extracted from the PDF");
+      }
+
+      const total = chunks.length;
+      const fullText = text ?? chunks.join(" ");
+      setSynthesisProgress({ ready: 0, total });
       setStatus("synthesizing");
-      const { audioUrl: url } = await synthesizeTts({ chunks });
-      setAudioUrl(url);
+
+      const ttsOpts = { detectFromText: fullText };
+      const first = await synthesizeTts({ chunks: [chunks[0]], ...ttsOpts });
+      if (cancelledRef.current) return;
+
+      setAudioUrls([first.audioUrl]);
+      setSynthesisProgress({ ready: 1, total });
       setStatus("ready");
+
+      if (total <= 1) return;
+
+      const urls = [first.audioUrl];
+      for (let i = 1; i < total; i++) {
+        if (cancelledRef.current) return;
+        try {
+          const result = await synthesizeTts({
+            chunks: [chunks[i]],
+            ...ttsOpts,
+          });
+          if (cancelledRef.current) return;
+          urls.push(result.audioUrl);
+          setAudioUrls([...urls]);
+          setSynthesisProgress({ ready: i + 1, total });
+        } catch (chunkErr) {
+          console.error(`Chunk ${i + 1}/${total} synthesis failed:`, chunkErr);
+          setError(
+            chunkErr instanceof Error
+              ? chunkErr.message
+              : `Failed to prepare part ${i + 1} of ${total}`
+          );
+          break;
+        }
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-      setStatus("error");
+      if (!cancelledRef.current) {
+        setError(e instanceof Error ? e.message : "Something went wrong");
+        setStatus("error");
+      }
     }
   }, [selectedFile]);
 
   const reset = useCallback(() => {
+    cancelledRef.current = true;
     setStatus("idle");
     setError(null);
-    setAudioUrl(null);
+    setAudioUrls([]);
     setTranscriptText(null);
+    setSynthesisProgress(null);
     setSelectedFile(null);
   }, []);
 
-  return { status, error, audioUrl, transcriptText, selectedFile, selectFile, run, reset };
-}
+  const isBackgroundSynthesizing =
+    synthesisProgress != null &&
+    synthesisProgress.ready < synthesisProgress.total &&
+    audioUrls.length > 0;
 
+  return {
+    status,
+    error,
+    audioUrls,
+    audioUrl: audioUrls[0] ?? null,
+    transcriptText,
+    synthesisProgress,
+    isBackgroundSynthesizing,
+    selectedFile,
+    selectFile,
+    run,
+    reset,
+  };
+}
