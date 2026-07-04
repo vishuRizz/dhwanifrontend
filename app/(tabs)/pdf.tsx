@@ -19,8 +19,11 @@ export default function PdfToAudioScreen() {
   const {
     status,
     error,
+    audioUrls,
     audioUrl,
     transcriptText,
+    synthesisProgress,
+    isBackgroundSynthesizing,
     selectedFile,
     selectFile,
     run,
@@ -29,6 +32,7 @@ export default function PdfToAudioScreen() {
 
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
   const progress = durationMs > 0 ? positionMs / durationMs : 0;
 
   return (
@@ -36,6 +40,8 @@ export default function PdfToAudioScreen() {
       style={styles.scroll}
       contentContainerStyle={[styles.container, { paddingTop: insets.top + theme.spacing.lg }]}
       keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
+      scrollEnabled={scrollEnabled}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
@@ -50,15 +56,19 @@ export default function PdfToAudioScreen() {
           onFileSelected={selectFile}
           selectedFile={selectedFile}
           status={status}
-          disabled={status === "extracting" || status === "synthesizing"}
+          disabled={status === "extracting" || (status === "synthesizing" && audioUrls.length === 0)}
         />
       </View>
 
-      {(status === "extracting" || status === "synthesizing") && (
+      {status === "extracting" && (
         <View style={styles.statusCard}>
-          <Text style={styles.statusText}>
-            {status === "extracting" ? "Extracting text…" : "Preparing audio…"}
-          </Text>
+          <Text style={styles.statusText}>Extracting text…</Text>
+        </View>
+      )}
+
+      {status === "synthesizing" && audioUrls.length === 0 && (
+        <View style={styles.statusCard}>
+          <Text style={styles.statusText}>Preparing first audio part…</Text>
         </View>
       )}
 
@@ -78,17 +88,25 @@ export default function PdfToAudioScreen() {
         </TouchableOpacity>
       )}
 
-      {audioUrl && (
+      {audioUrls.length > 0 && (
         <View style={styles.resultSection}>
           <View style={styles.audioCard}>
             <Text style={styles.sectionTitle}>Now playing</Text>
             <AudioPlayer
-              audioUrl={audioUrl}
+              audioUrls={audioUrls}
+              expectMoreChunks={isBackgroundSynthesizing}
               onProgress={(pos, dur) => {
                 setPositionMs(pos);
                 setDurationMs(dur);
               }}
+              onSeekStart={() => setScrollEnabled(false)}
+              onSeekEnd={() => setScrollEnabled(true)}
             />
+            {isBackgroundSynthesizing && synthesisProgress && (
+              <Text style={styles.backgroundHint}>
+                Loading more audio… ({synthesisProgress.ready}/{synthesisProgress.total} parts ready)
+              </Text>
+            )}
           </View>
 
           {transcriptText && (
@@ -96,7 +114,11 @@ export default function PdfToAudioScreen() {
           )}
 
           <View style={styles.downloadWrap}>
-            <DownloadButton audioUrl={audioUrl} filename="pdf-speech.mp3" />
+            <DownloadButton
+              audioUrl={audioUrl}
+              filename="pdf-speech.mp3"
+              disabled={isBackgroundSynthesizing}
+            />
           </View>
         </View>
       )}
@@ -192,6 +214,12 @@ const styles = StyleSheet.create({
   },
   audioCard: {
     marginBottom: theme.spacing.sm,
+  },
+  backgroundHint: {
+    marginTop: theme.spacing.sm,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
   },
   sectionTitle: {
     fontSize: 14,
