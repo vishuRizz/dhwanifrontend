@@ -2,7 +2,7 @@
   "expo": {
     "name": "Sunai",
     "slug": "sunai",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sunai",
@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.avi.sunaiapp",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

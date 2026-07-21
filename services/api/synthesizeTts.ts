@@ -40,6 +40,7 @@ const normalizeAudioUrl = (rawUrl: string, baseUrl: string) => {
 export interface SynthesizeTtsResult {
   audioUrl: string;
   path: string;
+  spokenText?: string;
 }
 
 export async function synthesizeTts(params: {

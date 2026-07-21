@@ -1,29 +1,35 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { Colors, theme } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].icon,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: colorScheme === 'dark' ? '#2a2a2a' : '#e5e7eb',
-          backgroundColor: colorScheme === 'dark' ? '#151718' : '#ffffff',
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 60,
-          paddingBottom: 8,
+          borderTopColor: isDark ? '#2a2a2a' : theme.colors.border,
+          backgroundColor: isDark ? '#151718' : '#ffffff',
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -42,7 +48,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="pdf"
         options={{
-          title: 'PDF to Audio',
+          title: 'PDF Audio',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="speaker.wave.2.fill" color={color} />
           ),
@@ -53,7 +59,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="info.circle.fill" color={color} />
+            <IconSymbol size={24} name="person.fill" color={color} />
           ),
         }}
       />
