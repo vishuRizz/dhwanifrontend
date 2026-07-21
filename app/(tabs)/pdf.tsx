@@ -9,9 +9,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePdfToSpeech } from "@/hooks/usePdfToSpeech";
 import { PdfUploader } from "@/components/pdf/PdfUploader";
+import { LanguagePicker } from "@/components/pdf/LanguagePicker";
 import { AudioPlayer } from "@/components/audio/AudioPlayer";
 import { DownloadButton } from "@/components/audio/DownloadButton";
 import { SyncedTranscript } from "@/components/audio/SyncedTranscript";
+import { OUTPUT_LANGUAGES } from "@/constants/languages";
 import { theme } from "@/constants/theme";
 
 export default function PdfToAudioScreen() {
@@ -25,6 +27,8 @@ export default function PdfToAudioScreen() {
     synthesisProgress,
     isBackgroundSynthesizing,
     selectedFile,
+    outputLanguage,
+    setOutputLanguage,
     selectFile,
     run,
     reset,
@@ -34,29 +38,49 @@ export default function PdfToAudioScreen() {
   const [durationMs, setDurationMs] = useState(0);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const progress = durationMs > 0 ? positionMs / durationMs : 0;
+  const isBusy =
+    status === "extracting" ||
+    (status === "synthesizing" && audioUrls.length === 0);
+  const selectedLangLabel =
+    OUTPUT_LANGUAGES.find((l) => l.code === outputLanguage)?.label ?? "English";
 
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={[styles.container, { paddingTop: insets.top + theme.spacing.lg }]}
+      contentContainerStyle={[
+        styles.container,
+        { paddingTop: insets.top + theme.spacing.lg },
+      ]}
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
       scrollEnabled={scrollEnabled}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
+        <Text style={styles.eyebrow}>Sunai</Text>
         <Text style={styles.title}>PDF to Audio</Text>
         <Text style={styles.subtitle}>
-          Select a PDF, convert to speech, and follow along with the transcript
+          Pick a PDF, choose your speech language, then listen along with the
+          transcript
         </Text>
       </View>
 
-      <View style={styles.uploadCard}>
+      <View style={styles.section}>
+        <Text style={styles.stepLabel}>1. Select PDF</Text>
         <PdfUploader
           onFileSelected={selectFile}
           selectedFile={selectedFile}
           status={status}
-          disabled={status === "extracting" || (status === "synthesizing" && audioUrls.length === 0)}
+          disabled={isBusy}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.stepLabel}>2. Choose speech language</Text>
+        <LanguagePicker
+          value={outputLanguage}
+          onChange={setOutputLanguage}
+          disabled={isBusy || status === "ready"}
         />
       </View>
 
@@ -68,7 +92,9 @@ export default function PdfToAudioScreen() {
 
       {status === "synthesizing" && audioUrls.length === 0 && (
         <View style={styles.statusCard}>
-          <Text style={styles.statusText}>Preparing first audio part…</Text>
+          <Text style={styles.statusText}>
+            Translating & preparing {selectedLangLabel} audio…
+          </Text>
         </View>
       )}
 
@@ -84,14 +110,18 @@ export default function PdfToAudioScreen() {
           onPress={run}
           activeOpacity={0.8}
         >
-          <Text style={styles.convertButtonText}>Convert to speech</Text>
+          <Text style={styles.convertButtonText}>
+            Convert to {selectedLangLabel} speech
+          </Text>
         </TouchableOpacity>
       )}
 
       {audioUrls.length > 0 && (
         <View style={styles.resultSection}>
           <View style={styles.audioCard}>
-            <Text style={styles.sectionTitle}>Now playing</Text>
+            <Text style={styles.sectionTitle}>
+              Now playing · {selectedLangLabel}
+            </Text>
             <AudioPlayer
               audioUrls={audioUrls}
               expectMoreChunks={isBackgroundSynthesizing}
@@ -104,7 +134,8 @@ export default function PdfToAudioScreen() {
             />
             {isBackgroundSynthesizing && synthesisProgress && (
               <Text style={styles.backgroundHint}>
-                Loading more audio… ({synthesisProgress.ready}/{synthesisProgress.total} parts ready)
+                Loading more audio… ({synthesisProgress.ready}/
+                {synthesisProgress.total} parts ready)
               </Text>
             )}
           </View>
@@ -146,24 +177,38 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.xl * 2,
   },
   header: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.xs,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "700",
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
   },
   subtitle: {
     fontSize: 15,
     color: theme.colors.textSecondary,
     lineHeight: 22,
   },
-  uploadCard: {
-    marginBottom: theme.spacing.md,
+  section: {
+    marginBottom: theme.spacing.lg,
+  },
+  stepLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
+    letterSpacing: 0.2,
   },
   statusCard: {
-    marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
     padding: theme.spacing.md,
     backgroundColor: theme.colors.card,
@@ -177,7 +222,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   errorBox: {
-    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
     padding: theme.spacing.md,
     backgroundColor: "#fef2f2",
     borderRadius: theme.radius.md,
@@ -189,7 +234,7 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
   },
   convertButton: {
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
     backgroundColor: theme.colors.primary,
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
@@ -242,4 +287,3 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
 });
-

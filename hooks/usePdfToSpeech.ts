@@ -1,6 +1,10 @@
 import { useState, useCallback, useRef } from "react";
 import { uploadPdf } from "@/services/api/uploadPdf";
 import { synthesizeTts } from "@/services/api/synthesizeTts";
+import {
+  DEFAULT_OUTPUT_LANGUAGE,
+  type OutputLanguageCode,
+} from "@/constants/languages";
 
 export type PdfToSpeechStatus =
   | "idle"
@@ -25,6 +29,8 @@ export interface UsePdfToSpeechResult {
   synthesisProgress: SynthesisProgress | null;
   isBackgroundSynthesizing: boolean;
   selectedFile: { name: string; uri: string } | null;
+  outputLanguage: OutputLanguageCode;
+  setOutputLanguage: (code: OutputLanguageCode) => void;
   selectFile: (file: { uri: string; name: string; type?: string } | null) => void;
   run: () => Promise<void>;
   reset: () => void;
@@ -37,6 +43,9 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
   const [transcriptText, setTranscriptText] = useState<string | null>(null);
   const [synthesisProgress, setSynthesisProgress] = useState<SynthesisProgress | null>(null);
   const [selectedFile, setSelectedFile] = useState<{ name: string; uri: string } | null>(null);
+  const [outputLanguage, setOutputLanguage] = useState<OutputLanguageCode>(
+    DEFAULT_OUTPUT_LANGUAGE
+  );
   const cancelledRef = useRef(false);
 
   const selectFile = useCallback((file: { uri: string; name: string; type?: string } | null) => {
@@ -60,20 +69,28 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
       });
       if (cancelledRef.current) return;
 
-      setTranscriptText(text ?? null);
-
       if (!chunks?.length) {
         throw new Error("No text could be extracted from the PDF");
       }
 
       const total = chunks.length;
       const fullText = text ?? chunks.join(" ");
+      setTranscriptText(fullText);
       setSynthesisProgress({ ready: 0, total });
       setStatus("synthesizing");
 
-      const ttsOpts = { detectFromText: fullText };
+      const ttsOpts = {
+        languageCode: outputLanguage,
+        detectFromText: fullText,
+      };
       const first = await synthesizeTts({ chunks: [chunks[0]], ...ttsOpts });
       if (cancelledRef.current) return;
+
+      const spokenParts: string[] = [];
+      if (first.spokenText?.trim()) {
+        spokenParts.push(first.spokenText.trim());
+        setTranscriptText(spokenParts.join("\n\n"));
+      }
 
       setAudioUrls([first.audioUrl]);
       setSynthesisProgress({ ready: 1, total });
@@ -90,6 +107,10 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
             ...ttsOpts,
           });
           if (cancelledRef.current) return;
+          if (result.spokenText?.trim()) {
+            spokenParts.push(result.spokenText.trim());
+            setTranscriptText(spokenParts.join("\n\n"));
+          }
           urls.push(result.audioUrl);
           setAudioUrls([...urls]);
           setSynthesisProgress({ ready: i + 1, total });
@@ -109,7 +130,7 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
         setStatus("error");
       }
     }
-  }, [selectedFile]);
+  }, [selectedFile, outputLanguage]);
 
   const reset = useCallback(() => {
     cancelledRef.current = true;
@@ -135,6 +156,8 @@ export function usePdfToSpeech(): UsePdfToSpeechResult {
     synthesisProgress,
     isBackgroundSynthesizing,
     selectedFile,
+    outputLanguage,
+    setOutputLanguage,
     selectFile,
     run,
     reset,

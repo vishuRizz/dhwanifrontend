@@ -46,7 +46,11 @@ export function PdfUploader({
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.card, isBusy && styles.cardDisabled]}
+        style={[
+          styles.card,
+          selectedFile && styles.cardSelected,
+          isBusy && styles.cardDisabled,
+        ]}
         onPress={pickDocument}
         disabled={isBusy || disabled}
         activeOpacity={0.7}
@@ -82,7 +86,11 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: theme.minTouchTarget * 2,
+    minHeight: theme.minTouchTarget * 2.2,
+  },
+  cardSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: "#eff6ff",
   },
   cardDisabled: {
     opacity: 0.8,
